@@ -2,6 +2,8 @@ package com.keycloak.connector.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.keycloak.connector.config.IAMPropertyReader;
 import com.keycloak.connector.constants.KeycloakConstants;
 import com.keycloak.connector.dto.KeycloakProvider;
@@ -24,6 +26,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static com.keycloak.connector.constants.KeycloakConstants.AUTH_PASSWORD;
+import static com.keycloak.connector.constants.KeycloakConstants.AUTH_USER;
 import static com.keycloak.connector.constants.KeycloakConstants.REALM;
 
 @Service
@@ -41,14 +45,33 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
     @Autowired
     private IAMConnector iamConnector;
 
+    @Autowired
+    private AuthenticationService authenticationService;
+
+    public static final String ACCESS_TOKEN = "access_token";
+
 
 
     @Override
     public Integer createUser(KeycloakUser user) throws JsonProcessingException, KeycloakException {
         List<String> roles = new ArrayList<>();
+        roles.add("manage-users");
+
         UsersResource usersResource = kcProvider.getInstance().realm(iamPropertyReader.getProperty(REALM)).users();
         CredentialRepresentation credentialRepresentation = createPasswordCredentials(user.getPassword());
         UserRepresentation kcUser = new UserRepresentation();
+
+
+        String userName = iamPropertyReader.getProperty(AUTH_USER);
+        String password = iamPropertyReader.getProperty(AUTH_PASSWORD);
+
+        UserCredentials userCredentials = new UserCredentials();
+        userCredentials.setUserName(userName);
+        userCredentials.setPassword(password);
+
+        String token = authenticationService.getUserAuthentication(userCredentials, AuthenticationService.Scope.none, AuthenticationService.GrantType.password);
+        JsonObject jsonObject = new JsonParser().parse(token).getAsJsonObject();
+        String bearer = jsonObject.get(ACCESS_TOKEN).getAsString();
 
         kcUser.setUsername(user.getUserName());
         kcUser.setCredentials(Collections.singletonList(credentialRepresentation));
@@ -62,7 +85,9 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-        headers.set("Authorization", customUserProvider.accessToken());
+        //headers.set("Authorization", customUserProvider.accessToken());
+        headers.set("Authorization", "Bearer " + bearer);
+        //"Bearer " +
 
         HttpEntity<String> postEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(kcUser), headers);
 

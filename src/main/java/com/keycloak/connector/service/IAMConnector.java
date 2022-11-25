@@ -18,4 +18,10 @@ public class IAMConnector implements IIAMConnector{
         return customUserProvider.getCurrentUser();
     }
 
+    @Override
+    public String getToken() {
+        return customUserProvider.accessToken();
+    }
+
+
 }
