@@ -4,4 +4,5 @@ import com.keycloak.connector.security.CurrentUser;
 
 public interface IIAMConnector {
     CurrentUser getCurrentUser();
+    String getToken();
 }

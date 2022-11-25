@@ -63,13 +63,15 @@ public class AuthenticationService implements IAuthenticationService{
     }
 
     @Override
-    public String getUserRefreshToken(String _refreshToken, GrantType grandType) throws KeycloakException {
+    public String getUserRefreshToken(UserCredentials credentials, GrantType grandType) throws KeycloakException {
         String responseToken = null;
 
         try {
             List<NameValuePair> urlParameters = new ArrayList();
+
+            urlParameters.add(new BasicNameValuePair("username", credentials.getUserName()));
             urlParameters.add(new BasicNameValuePair("grant_type", grandType.toString()));
-            urlParameters.add(new BasicNameValuePair("refresh_token", _refreshToken));
+            urlParameters.add(new BasicNameValuePair("refresh_token", credentials.getRefreshToken()));
             urlParameters.add(new BasicNameValuePair("client_id", this.propertyReader.getProperty("keycloak.resource")));
             urlParameters.add(new BasicNameValuePair("client_secret", this.propertyReader.getProperty("keycloak.credentials.secret")));
             responseToken = this.sendPost(urlParameters, "", grandType);
