@@ -16,18 +16,23 @@ public class CustomUserProvider {
     public CurrentUser getCurrentUser() {
         CurrentUser currentUser = new CurrentUser();
         KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal = this.getCurrentUserPrincipal();
-        String userId = principal.getKeycloakSecurityContext().getToken().getSubject();
-        String userName = principal.toString();
-        String email = principal.getKeycloakSecurityContext().getToken().getEmail();
+        if(principal!= null) {
+            String userId = principal.getKeycloakSecurityContext().getToken().getSubject();
+            String userName = principal.toString();
+            String email = principal.getKeycloakSecurityContext().getToken().getEmail();
 
-        currentUser.setUserId(userId);
-        currentUser.setUserName(userName);
-        currentUser.setEmail(email);
+            currentUser.setUserId(userId);
+            currentUser.setUserName(userName);
+            currentUser.setEmail(email);
+        }
         return currentUser;
     }
 
     public KeycloakPrincipal<RefreshableKeycloakSecurityContext> getCurrentUserPrincipal() {
-        return (KeycloakPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(SecurityContextHolder.getContext().getAuthentication() != null) {
+            return (KeycloakPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        }
+        return null;
     }
 
     public String accessToken() {

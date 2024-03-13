@@ -6,15 +6,9 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.keycloak.connector.config.IAMPropertyReader;
 import com.keycloak.connector.constants.KeycloakConstants;
-import com.keycloak.connector.dto.KeycloakProvider;
 import com.keycloak.connector.dto.KeycloakUser;
-import com.keycloak.connector.dto.Roles;
-import com.keycloak.connector.dto.User;
 import com.keycloak.connector.exception.KeycloakException;
-import com.keycloak.connector.security.CurrentUser;
-import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -24,38 +18,22 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
-import javax.ws.rs.core.Response;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static com.keycloak.connector.constants.KeycloakConstants.AUTH_PASSWORD;
 import static com.keycloak.connector.constants.KeycloakConstants.AUTH_USER;
-import static com.keycloak.connector.constants.KeycloakConstants.REALM;
 import static com.keycloak.connector.constants.KeycloakConstants.RESOURCE;
 
 @Service
 public class KeycloakUserServiceImpl implements KeycloakUserService {
-
-    @Autowired
-    private KeycloakProvider kcProvider;
-
-    @Autowired
-    private CustomUserProvider customUserProvider;
-
     @Autowired
     private IAMPropertyReader iamPropertyReader;
-
-    @Autowired
-    private IAMConnector iamConnector;
 
     @Autowired
     private AuthenticationService authenticationService;
@@ -126,20 +104,23 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
         Map currentUserMap = (Map) userResponseEntity.getBody().get(0);
         String userId = (String) currentUserMap.get("id");
 
-        ResponseEntity<List> clientResponseEntity = restTemplate.exchange(iamPropertyReader.getProperty(KeycloakConstants.AUTH_SERVER_BASE_URL) + "/clients?clientId=" + client, HttpMethod.GET, postEntity, List.class);
-        Map<String, Object> clientMap = (Map) clientResponseEntity.getBody().get(0);
-        String clientId = (String) clientMap.get("id");
+        try {
+            ResponseEntity<List> clientResponseEntity = restTemplate.exchange(iamPropertyReader.getProperty(KeycloakConstants.AUTH_SERVER_BASE_URL) + "/clients?clientId=" + client, HttpMethod.GET, postEntity, List.class);
+            Map<String, Object> clientMap = (Map) clientResponseEntity.getBody().get(0);
+            String clientId = (String) clientMap.get("id");
 
-        ResponseEntity<Map> roleResponseEntity = restTemplate.exchange(iamPropertyReader.getProperty(KeycloakConstants.AUTH_SERVER_BASE_URL) + "/clients/" + clientId + "/roles/" + roles.get(0), HttpMethod.GET, postEntity, Map.class);
+            ResponseEntity<Map> roleResponseEntity = restTemplate.exchange(iamPropertyReader.getProperty(KeycloakConstants.AUTH_SERVER_BASE_URL) + "/clients/" + clientId + "/roles/" + roles.get(0), HttpMethod.GET, postEntity, Map.class);
 
-        List<Map> keycloakRoleMap = new ArrayList<>();
-        keycloakRoleMap.add(roleResponseEntity.getBody());
+            List<Map> keycloakRoleMap = new ArrayList<>();
+            keycloakRoleMap.add(roleResponseEntity.getBody());
 
-        HttpEntity<String> postRoleEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(keycloakRoleMap), headers);
-        restTemplate.exchange(iamPropertyReader.getProperty(KeycloakConstants.AUTH_SERVER_BASE_URL) + "/users/" + userId + "/role-mappings/clients/" + clientId, HttpMethod.POST, postRoleEntity, String.class);
+            HttpEntity<String> postRoleEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(keycloakRoleMap), headers);
+            restTemplate.exchange(iamPropertyReader.getProperty(KeycloakConstants.AUTH_SERVER_BASE_URL) + "/users/" + userId + "/role-mappings/clients/" + clientId, HttpMethod.POST, postRoleEntity, String.class);
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
         return userId;
     }
-
 
     private static CredentialRepresentation createPasswordCredentials(String password) {
         CredentialRepresentation passwordCredentials = new CredentialRepresentation();

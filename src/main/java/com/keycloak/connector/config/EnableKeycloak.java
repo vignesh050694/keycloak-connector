@@ -2,7 +2,6 @@ package com.keycloak.connector.config;
 
 import org.springframework.context.annotation.Import;
 
-import javax.xml.bind.Element;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

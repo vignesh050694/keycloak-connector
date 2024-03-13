@@ -1,13 +1,11 @@
 package com.keycloak.connector.dto;
 
 import com.keycloak.connector.config.IAMPropertyReader;
-import com.keycloak.connector.constants.KeycloakConstants;
 import lombok.Getter;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 import static com.keycloak.connector.constants.KeycloakConstants.AUTH_PASSWORD;
